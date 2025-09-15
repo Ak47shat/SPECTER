@@ -1,8 +1,8 @@
 import streamlit as st
 import asyncio
 from pathlib import Path
+from specter_legal_assistant import groq_client, generate_fir_pdf, generate_rental_agreement, generate_consumer_complaint
 from specter_legal_assistant.rag_manager import rag_manager
-from specter_legal_assistant.config import settings
 from specter_legal_assistant.utils import format_response_for_gradio
 
 
@@ -12,9 +12,9 @@ async def legal_query(query: str, language: str = "english") -> str:
     try:
         if not query.strip():
             return "⚠️ Please enter a legal question."
-        
+
         context = rag_manager.get_relevant_context(query, k=3)
-        
+
         prompt = f"""You are a helpful legal assistant providing clear, practical advice about Indian law. 
 Provide a natural, empathetic response that directly addresses their specific situation.
 
@@ -25,7 +25,7 @@ Legal Information:
 
 Provide a clear, practical response that explains their legal options and applicable laws in natural language.
 """
-        from specter_legal_assistant import groq_client
+
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -44,51 +44,53 @@ Provide a clear, practical response that explains their legal options and applic
 # ========== DOCUMENT GENERATORS ==========
 def generate_fir(name: str, location: str, details: str) -> str:
     try:
-        from specter_legal_assistant import generate_fir_pdf
-        filename = generate_fir_pdf(name, location, details)
-        return str(Path("static") / filename)
+        data = {
+            "Name": name,
+            "Location": location,
+            "Incident Details": details
+        }
+        filename = generate_fir_pdf(data)
+        return filename
     except Exception as e:
         return f"Error generating FIR: {str(e)}"
 
 
-def generate_rental_agreement(landlord_name, tenant_name, property_address,
-                              rent_amount, security_deposit, lease_start_date,
-                              lease_end_date, terms_and_conditions) -> str:
+def generate_rental_agreement_doc(landlord_name, tenant_name, property_address,
+                                  rent_amount, security_deposit, lease_start_date,
+                                  lease_end_date, terms_and_conditions) -> str:
     try:
-        from specter_legal_assistant import RentalAgreementData, generate_rental_agreement
-        data = RentalAgreementData(
-            landlord_name=landlord_name,
-            tenant_name=tenant_name,
-            property_address=property_address,
-            rent_amount=rent_amount,
-            security_deposit=security_deposit,
-            lease_start_date=lease_start_date,
-            lease_end_date=lease_end_date,
-            terms_and_conditions=terms_and_conditions
-        )
+        data = {
+            "Landlord": landlord_name,
+            "Tenant": tenant_name,
+            "Property Address": property_address,
+            "Rent Amount": rent_amount,
+            "Security Deposit": security_deposit,
+            "Lease Start Date": lease_start_date,
+            "Lease End Date": lease_end_date,
+            "Terms and Conditions": terms_and_conditions
+        }
         filename = generate_rental_agreement(data)
-        return str(Path("static") / filename)
+        return filename
     except Exception as e:
         return f"Error generating Rental Agreement: {str(e)}"
 
 
-def generate_consumer_complaint(complainant_name, complainant_address, complainant_contact,
-                                company_name, company_address, product_service_details,
-                                complaint_details, desired_resolution) -> str:
+def generate_consumer_complaint_doc(complainant_name, complainant_address, complainant_contact,
+                                    company_name, company_address, product_service_details,
+                                    complaint_details, desired_resolution) -> str:
     try:
-        from specter_legal_assistant import ConsumerComplaintData, generate_consumer_complaint
-        data = ConsumerComplaintData(
-            complainant_name=complainant_name,
-            complainant_address=complainant_address,
-            complainant_contact=complainant_contact,
-            company_name=company_name,
-            company_address=company_address,
-            product_service_details=product_service_details,
-            complaint_details=complaint_details,
-            desired_resolution=desired_resolution
-        )
+        data = {
+            "Complainant": complainant_name,
+            "Complainant Address": complainant_address,
+            "Complainant Contact": complainant_contact,
+            "Company": company_name,
+            "Company Address": company_address,
+            "Product/Service": product_service_details,
+            "Complaint": complaint_details,
+            "Desired Resolution": desired_resolution
+        }
         filename = generate_consumer_complaint(data)
-        return str(Path("static") / filename)
+        return filename
     except Exception as e:
         return f"Error generating Consumer Complaint: {str(e)}"
 
@@ -151,7 +153,7 @@ if app_mode == "🤖 Ask Legal Questions":
     st.subheader("🤖 Ask Legal Questions")
     query = st.text_area("Enter your legal question:", placeholder="Example: What are my rights if I'm arrested by the police?")
     language = st.selectbox("Select Language", ["english", "hindi"])
-    
+
     with st.expander("💡 Tips for better responses"):
         st.markdown("""
         - Be specific about your situation  
@@ -159,7 +161,7 @@ if app_mode == "🤖 Ask Legal Questions":
         - Ask about specific laws or procedures  
         - Include any relevant dates or events  
         """)
-    
+
     if st.button("Get Legal Advice"):
         answer = asyncio.run(legal_query(query, language))
         st.text_area("Legal Advice", answer, height=300)
@@ -171,7 +173,7 @@ elif app_mode == "📝 Generate FIR":
     name = st.text_input("Your Full Name")
     location = st.text_input("Location of Incident")
     details = st.text_area("Incident Details")
-    
+
     with st.expander("📋 FIR Information"):
         st.markdown("""
         - Used to report criminal offenses  
@@ -179,7 +181,7 @@ elif app_mode == "📝 Generate FIR":
         - Required for legal proceedings  
         - Contains complainant and incident details  
         """)
-    
+
     if st.button("Generate FIR"):
         file_path = generate_fir(name, location, details)
         if file_path.endswith(".pdf"):
@@ -200,7 +202,7 @@ elif app_mode == "🏠 Rental Agreement":
     lease_start = st.text_input("Lease Start Date (DD-MM-YYYY)")
     lease_end = st.text_input("Lease End Date (DD-MM-YYYY)")
     terms = st.text_area("Terms and Conditions")
-    
+
     with st.expander("📄 Rental Agreement Info"):
         st.markdown("""
         - Legal contract between landlord and tenant  
@@ -208,9 +210,9 @@ elif app_mode == "🏠 Rental Agreement":
         - Protects both parties' rights  
         - Required for rental disputes  
         """)
-    
+
     if st.button("Generate Rental Agreement"):
-        file_path = generate_rental_agreement(landlord, tenant, property_address, rent, deposit, lease_start, lease_end, terms)
+        file_path = generate_rental_agreement_doc(landlord, tenant, property_address, rent, deposit, lease_start, lease_end, terms)
         if file_path.endswith(".pdf"):
             with open(file_path, "rb") as f:
                 st.download_button("⬇️ Download Rental Agreement", f, file_name="Rental_Agreement.pdf")
@@ -229,7 +231,7 @@ elif app_mode == "🛒 Consumer Complaint":
     product_details = st.text_input("Product/Service Details")
     complaint_details = st.text_area("Complaint Details")
     resolution = st.text_area("Desired Resolution")
-    
+
     with st.expander("🛡️ Consumer Rights"):
         st.markdown("""
         - Right to safety and quality  
@@ -238,10 +240,10 @@ elif app_mode == "🛒 Consumer Complaint":
         - Right to redressal  
         - Right to be heard  
         """)
-    
+
     if st.button("Generate Complaint"):
-        file_path = generate_consumer_complaint(comp_name, comp_address, comp_contact, company, company_addr,
-                                                product_details, complaint_details, resolution)
+        file_path = generate_consumer_complaint_doc(comp_name, comp_address, comp_contact, company, company_addr,
+                                                    product_details, complaint_details, resolution)
         if file_path.endswith(".pdf"):
             with open(file_path, "rb") as f:
                 st.download_button("⬇️ Download Complaint", f, file_name="Consumer_Complaint.pdf")

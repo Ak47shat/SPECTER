@@ -126,3 +126,5 @@ def search_vector_store(query: str, top_k: int = 3):
     embedding = model.encode([query])
     distances, indices = index.search(np.array(embedding, dtype=np.float32), top_k)
     return indices, distances
+    
+groq_client = client

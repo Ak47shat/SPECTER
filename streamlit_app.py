@@ -49,11 +49,16 @@ def generate_fir(name: str, location: str, details: str) -> str:
     pdf.multi_cell(0, 10, "4. WITNESS DETAILS\nName: _________________\nAddress: _________________\nContact: _________________\n")
     pdf.ln(5)
     pdf.multi_cell(0, 10, "5. PROPERTY DETAILS (IF ANY)\nDescription: _________________\nEstimated Value: _________________\n")
-    pdf.ln(5)
-    pdf.multi_cell(0, 10, f"6. SIGNATURES\nComplainant's Signature Police Officer's Signature\n"
-                           f"_________________ _________________\n"
-                           f"Name: {name} Name: _________________\n"
-                           f"Date: {datetime.today().strftime('%d-%m-%Y')} Designation: _________________\n")
+    pdf.ln(10)
+    pdf.multi_cell(0, 10, "6. SIGNATURES\n")
+    pdf.cell(90, 10, "Complainant's Signature", border=0)
+    pdf.cell(0, 10, "Police Officer's Signature", ln=True)
+    pdf.cell(90, 10, "_________________", border=0)
+    pdf.cell(0, 10, "_________________", ln=True)
+    pdf.cell(90, 10, f"Name: {name}", border=0)
+    pdf.cell(0, 10, "Name: _________________", ln=True)
+    pdf.cell(90, 10, f"Date: {datetime.today().strftime('%d-%m-%Y')}", border=0)
+    pdf.cell(0, 10, "Designation: _________________", ln=True)
     pdf.output(filepath)
     return str(filepath)
 

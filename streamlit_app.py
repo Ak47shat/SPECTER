@@ -87,11 +87,16 @@ def generate_rental_agreement(landlord_name, tenant_name, property_address,
                            f"Lease End Date: {lease_end_date}\n")
     pdf.ln(5)
     pdf.multi_cell(0, 10, f"4. TERMS AND CONDITIONS\n{terms_and_conditions}\n")
-    pdf.ln(5)
-    pdf.multi_cell(0, 10, f"5. SIGNATURES\nLandlord's Signature Tenant's Signature\n"
-                           f"_________________ _________________\n"
-                           f"Name: {landlord_name} Name: {tenant_name}\n"
-                           f"Date: {datetime.today().strftime('%d-%m-%Y')} Date: {datetime.today().strftime('%d-%m-%Y')}\n")
+    pdf.ln(10)
+    pdf.multi_cell(0, 10, "5. SIGNATURES\n")
+    pdf.cell(90, 10, "Landlord's Signature", border=0)
+    pdf.cell(0, 10, "Tenant's Signature", ln=True)
+    pdf.cell(90, 10, "_________________", border=0)
+    pdf.cell(0, 10, "_________________", ln=True)
+    pdf.cell(90, 10, f"Name: {landlord_name}", border=0)
+    pdf.cell(0, 10, f"Name: {tenant_name}", ln=True)
+    pdf.cell(90, 10, f"Date: {datetime.today().strftime('%d-%m-%Y')}", border=0)
+    pdf.cell(0, 10, f"Date: {datetime.today().strftime('%d-%m-%Y')}", ln=True)
     pdf.output(filepath)
     return str(filepath)
 
@@ -122,9 +127,9 @@ def generate_consumer_complaint(complainant_name, complainant_address, complaina
     pdf.ln(5)
     pdf.multi_cell(0, 10, f"4. DESIRED RESOLUTION\n{desired_resolution}\n")
     pdf.ln(5)
-    pdf.multi_cell(0, 10, f"5. SIGNATURE\nComplainant's Signature Date\n"
-                           f"_________________ {datetime.today().strftime('%d-%m-%Y')}\n"
-                           f"Name: {complainant_name}\n")
+    pdf.multi_cell(0, 10, "5. SIGNATURE\n")
+    pdf.cell(0, 10, f"Complainant's Signature: _________________    Date: {datetime.today().strftime('%d-%m-%Y')}", ln=True)
+    pdf.cell(0, 10, f"Name: {complainant_name}", ln=True)
     pdf.output(filepath)
     return str(filepath)
 

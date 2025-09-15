@@ -1,0 +1,18 @@
+# Core dependencies for Gradio deployment
+gradio>=4.0.0
+
+# AI/ML dependencies
+groq>=0.3.0
+langchain>=0.0.267
+langchain-community>=0.0.10
+langchain-huggingface>=0.0.1
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+
+# Document generation
+fpdf>=1.7.2
+
+# Utilities
+python-dotenv>=0.19.0
+deep-translator>=1.11.0
+numpy>=1.24.0

@@ -1,20 +1,135 @@
 import streamlit as st
 import asyncio
 from pathlib import Path
-from specter_legal_assistant import groq_client, generate_fir_pdf, generate_rental_agreement, generate_consumer_complaint
 from specter_legal_assistant.rag_manager import rag_manager
+from specter_legal_assistant.config import settings
 from specter_legal_assistant.utils import format_response_for_gradio
+from specter_legal_assistant import groq_client
+from fpdf import FPDF
+from datetime import datetime
+import os
+import uuid
 
+# ---------- UTILITIES ---------- #
 
-# ========== LEGAL QUERY ==========
+def generate_fir(name: str, location: str, details: str) -> str:
+    """Generate FIR PDF with only user-provided details filled."""
+    output_dir = "static"
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"fir_{uuid.uuid4().hex}.pdf"
+    filepath = Path(output_dir) / filename
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(0, 10, "FIRST INFORMATION REPORT (FIR)", ln=True, align="C")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"Police Station: _________________\n"
+                           f"District: _________________\n"
+                           f"State: _________________\n"
+                           f"FIR No.: _________________\n"
+                           f"Date of Registration: {datetime.today().strftime('%d-%m-%Y')}\n"
+                           f"Time of Registration: {datetime.today().strftime('%H:%M:%S')}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"1. COMPLAINANT DETAILS\n"
+                           f"Name: {name}\n"
+                           f"Address: {location}\n"
+                           f"Contact No.: _________________\n"
+                           f"Email: _________________\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"2. INCIDENT DETAILS\n"
+                           f"Date of Incident: _________________\n"
+                           f"Time of Incident: _________________\n"
+                           f"Place of Incident: {location}\n"
+                           f"Detailed Description:\n{details}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, "3. SECTION OF LAW\nTo be filled by the Police\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, "4. WITNESS DETAILS\nName: _________________\nAddress: _________________\nContact: _________________\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, "5. PROPERTY DETAILS (IF ANY)\nDescription: _________________\nEstimated Value: _________________\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"6. SIGNATURES\nComplainant's Signature Police Officer's Signature\n"
+                           f"_________________ _________________\n"
+                           f"Name: {name} Name: _________________\n"
+                           f"Date: {datetime.today().strftime('%d-%m-%Y')} Designation: _________________\n")
+    pdf.output(filepath)
+    return str(filepath)
+
+def generate_rental_agreement(landlord_name, tenant_name, property_address,
+                              rent_amount, security_deposit, lease_start_date,
+                              lease_end_date, terms_and_conditions) -> str:
+    """Generate Rental Agreement PDF."""
+    output_dir = "static"
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"rental_agreement_{uuid.uuid4().hex}.pdf"
+    filepath = Path(output_dir) / filename
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(0, 10, "RENTAL AGREEMENT", ln=True, align="C")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"1. PARTIES\nLandlord: {landlord_name}\nTenant: {tenant_name}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"2. PROPERTY DETAILS\nAddress: {property_address}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"3. LEASE TERMS\nRent Amount: INR {rent_amount:,.2f} per month\n"
+                           f"Security Deposit: INR {security_deposit:,.2f}\n"
+                           f"Lease Start Date: {lease_start_date}\n"
+                           f"Lease End Date: {lease_end_date}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"4. TERMS AND CONDITIONS\n{terms_and_conditions}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"5. SIGNATURES\nLandlord's Signature Tenant's Signature\n"
+                           f"_________________ _________________\n"
+                           f"Name: {landlord_name} Name: {tenant_name}\n"
+                           f"Date: {datetime.today().strftime('%d-%m-%Y')} Date: {datetime.today().strftime('%d-%m-%Y')}\n")
+    pdf.output(filepath)
+    return str(filepath)
+
+def generate_consumer_complaint(complainant_name, complainant_address, complainant_contact,
+                                company_name, company_address, product_service_details,
+                                complaint_details, desired_resolution) -> str:
+    """Generate Consumer Complaint PDF."""
+    output_dir = "static"
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"consumer_complaint_{uuid.uuid4().hex}.pdf"
+    filepath = Path(output_dir) / filename
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(0, 10, "CONSUMER COMPLAINT", ln=True, align="C")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"1. COMPLAINANT DETAILS\nName: {complainant_name}\n"
+                           f"Address: {complainant_address}\n"
+                           f"Contact: {complainant_contact}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"2. COMPANY DETAILS\nCompany Name: {company_name}\n"
+                           f"Address: {company_address}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"3. COMPLAINT DETAILS\nProduct/Service: {product_service_details}\n"
+                           f"Complaint Description:\n{complaint_details}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"4. DESIRED RESOLUTION\n{desired_resolution}\n")
+    pdf.ln(5)
+    pdf.multi_cell(0, 10, f"5. SIGNATURE\nComplainant's Signature Date\n"
+                           f"_________________ {datetime.today().strftime('%d-%m-%Y')}\n"
+                           f"Name: {complainant_name}\n")
+    pdf.output(filepath)
+    return str(filepath)
+
+# ---------- LEGAL QUERY ---------- #
 async def legal_query(query: str, language: str = "english") -> str:
     """Handle legal queries through RAG system"""
     try:
         if not query.strip():
             return "⚠️ Please enter a legal question."
-
         context = rag_manager.get_relevant_context(query, k=3)
-
         prompt = f"""You are a helpful legal assistant providing clear, practical advice about Indian law. 
 Provide a natural, empathetic response that directly addresses their specific situation.
 
@@ -25,7 +140,6 @@ Legal Information:
 
 Provide a clear, practical response that explains their legal options and applicable laws in natural language.
 """
-
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -40,65 +154,9 @@ Provide a clear, practical response that explains their legal options and applic
     except Exception as e:
         return f"❌ Error: {str(e)}"
 
-
-# ========== DOCUMENT GENERATORS ==========
-def generate_fir(name: str, location: str, details: str) -> str:
-    try:
-        data = {
-            "Name": name,
-            "Location": location,
-            "Incident Details": details
-        }
-        filename = generate_fir_pdf(data)
-        return filename
-    except Exception as e:
-        return f"Error generating FIR: {str(e)}"
-
-
-def generate_rental_agreement_doc(landlord_name, tenant_name, property_address,
-                                  rent_amount, security_deposit, lease_start_date,
-                                  lease_end_date, terms_and_conditions) -> str:
-    try:
-        data = {
-            "Landlord": landlord_name,
-            "Tenant": tenant_name,
-            "Property Address": property_address,
-            "Rent Amount": rent_amount,
-            "Security Deposit": security_deposit,
-            "Lease Start Date": lease_start_date,
-            "Lease End Date": lease_end_date,
-            "Terms and Conditions": terms_and_conditions
-        }
-        filename = generate_rental_agreement(data)
-        return filename
-    except Exception as e:
-        return f"Error generating Rental Agreement: {str(e)}"
-
-
-def generate_consumer_complaint_doc(complainant_name, complainant_address, complainant_contact,
-                                    company_name, company_address, product_service_details,
-                                    complaint_details, desired_resolution) -> str:
-    try:
-        data = {
-            "Complainant": complainant_name,
-            "Complainant Address": complainant_address,
-            "Complainant Contact": complainant_contact,
-            "Company": company_name,
-            "Company Address": company_address,
-            "Product/Service": product_service_details,
-            "Complaint": complaint_details,
-            "Desired Resolution": desired_resolution
-        }
-        filename = generate_consumer_complaint(data)
-        return filename
-    except Exception as e:
-        return f"Error generating Consumer Complaint: {str(e)}"
-
-
-# ========== STREAMLIT UI ==========
+# ---------- STREAMLIT UI ---------- #
 st.set_page_config(page_title="Legal Assistant AI", layout="wide")
 
-# Custom CSS
 st.markdown(
     """
     <style>
@@ -120,22 +178,18 @@ st.markdown(
             color: white;
         }
     </style>
-    """,
-    unsafe_allow_html=True
+    """, unsafe_allow_html=True
 )
 
-# Header
 st.markdown(
     """
     <div class="main-header">
         <h1>🏛️ Legal Assistant AI</h1>
         <p>Get instant legal advice and generate legal documents under Indian law</p>
     </div>
-    """,
-    unsafe_allow_html=True
+    """, unsafe_allow_html=True
 )
 
-# Sidebar navigation
 st.sidebar.title("📂 Menu")
 app_mode = st.sidebar.radio(
     "Choose a tool:",
@@ -147,41 +201,21 @@ app_mode = st.sidebar.radio(
     ]
 )
 
-
-# -------- Ask Legal Questions --------
+# ---------- Ask Legal Questions ----------
 if app_mode == "🤖 Ask Legal Questions":
     st.subheader("🤖 Ask Legal Questions")
     query = st.text_area("Enter your legal question:", placeholder="Example: What are my rights if I'm arrested by the police?")
     language = st.selectbox("Select Language", ["english", "hindi"])
-
-    with st.expander("💡 Tips for better responses"):
-        st.markdown("""
-        - Be specific about your situation  
-        - Mention relevant details (location, circumstances)  
-        - Ask about specific laws or procedures  
-        - Include any relevant dates or events  
-        """)
-
     if st.button("Get Legal Advice"):
         answer = asyncio.run(legal_query(query, language))
         st.text_area("Legal Advice", answer, height=300)
 
-
-# -------- FIR --------
+# ---------- FIR ----------
 elif app_mode == "📝 Generate FIR":
     st.subheader("📝 FIR Generator")
     name = st.text_input("Your Full Name")
     location = st.text_input("Location of Incident")
     details = st.text_area("Incident Details")
-
-    with st.expander("📋 FIR Information"):
-        st.markdown("""
-        - Used to report criminal offenses  
-        - Filed at the nearest police station  
-        - Required for legal proceedings  
-        - Contains complainant and incident details  
-        """)
-
     if st.button("Generate FIR"):
         file_path = generate_fir(name, location, details)
         if file_path.endswith(".pdf"):
@@ -190,8 +224,7 @@ elif app_mode == "📝 Generate FIR":
         else:
             st.error(file_path)
 
-
-# -------- Rental Agreement --------
+# ---------- Rental Agreement ----------
 elif app_mode == "🏠 Rental Agreement":
     st.subheader("🏠 Rental Agreement Generator")
     landlord = st.text_input("Landlord Name")
@@ -202,25 +235,15 @@ elif app_mode == "🏠 Rental Agreement":
     lease_start = st.text_input("Lease Start Date (DD-MM-YYYY)")
     lease_end = st.text_input("Lease End Date (DD-MM-YYYY)")
     terms = st.text_area("Terms and Conditions")
-
-    with st.expander("📄 Rental Agreement Info"):
-        st.markdown("""
-        - Legal contract between landlord and tenant  
-        - Defines rent, deposit, and lease terms  
-        - Protects both parties' rights  
-        - Required for rental disputes  
-        """)
-
     if st.button("Generate Rental Agreement"):
-        file_path = generate_rental_agreement_doc(landlord, tenant, property_address, rent, deposit, lease_start, lease_end, terms)
+        file_path = generate_rental_agreement(landlord, tenant, property_address, rent, deposit, lease_start, lease_end, terms)
         if file_path.endswith(".pdf"):
             with open(file_path, "rb") as f:
                 st.download_button("⬇️ Download Rental Agreement", f, file_name="Rental_Agreement.pdf")
         else:
             st.error(file_path)
 
-
-# -------- Consumer Complaint --------
+# ---------- Consumer Complaint ----------
 elif app_mode == "🛒 Consumer Complaint":
     st.subheader("🛒 Consumer Complaint Generator")
     comp_name = st.text_input("Your Name")
@@ -231,19 +254,9 @@ elif app_mode == "🛒 Consumer Complaint":
     product_details = st.text_input("Product/Service Details")
     complaint_details = st.text_area("Complaint Details")
     resolution = st.text_area("Desired Resolution")
-
-    with st.expander("🛡️ Consumer Rights"):
-        st.markdown("""
-        - Right to safety and quality  
-        - Right to information  
-        - Right to choose  
-        - Right to redressal  
-        - Right to be heard  
-        """)
-
     if st.button("Generate Complaint"):
-        file_path = generate_consumer_complaint_doc(comp_name, comp_address, comp_contact, company, company_addr,
-                                                    product_details, complaint_details, resolution)
+        file_path = generate_consumer_complaint(comp_name, comp_address, comp_contact, company, company_addr,
+                                                product_details, complaint_details, resolution)
         if file_path.endswith(".pdf"):
             with open(file_path, "rb") as f:
                 st.download_button("⬇️ Download Complaint", f, file_name="Consumer_Complaint.pdf")
